@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/parallels/CSCI-410-Computing-systems/Project6/main.cpp
+iostream
+-
+map
+-
+vector
+-
+fstream
+-
+sstream
+-
+algorithm
+-
+bitset
+-
+string
+-
+unistd.h
+-
+stdio.h
+-
+limits.h
+-
+
