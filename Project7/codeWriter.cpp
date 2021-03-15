@@ -1,0 +1,240 @@
+#include "include/codeWriter.h"
+
+void writeArithmetic(Command command, ofstream &stream, string lineNumber)
+{
+    stream << "@SP" << endl;
+    stream << "A=M-1" << endl;
+
+    if (command.arg1 == "neg")
+    {
+        stream << "M=-M" << endl;
+        return;
+    }
+    else if (command.arg1 == "not")
+    {
+        stream << "M=!M" << endl;
+        return;
+    }
+
+    stream << "D=M" << endl;
+    stream << "A=A-1" << endl;
+
+    if ((command.arg1 == "add") || (command.arg1 == "sub") || (command.arg1 == "and") || (command.arg1 == "or"))
+    {
+        if (command.arg1 == "add")
+        {
+            stream << "M=M+D" << endl;
+        }
+        else if (command.arg1 == "sub")
+        {
+            stream << "M=M-D" << endl;
+        }
+        else if (command.arg1 == "and")
+        {
+            stream << "M=D&M" << endl;
+        }
+        else if (command.arg1 == "or")
+        {
+            stream << "M=D|M" << endl;
+        }
+    }
+    else if ((command.arg1 == "eq") || (command.arg1 == "gt") || (command.arg1 == "lt"))
+    {
+        stream << "D=M-D" << endl;
+
+        if (command.arg1 == "eq")
+        {
+            stream << "@EQ_" << lineNumber << endl;
+            stream << "D;JEQ" << endl;
+
+            stream << "D=0" << endl;
+            stream << "@END" << lineNumber << endl;
+            stream << "0;JMP" << endl;
+
+            stream << "(EQ_" << lineNumber << ")" << endl;
+        }
+        else if (command.arg1 == "gt")
+        {
+            stream << "@GT_" << lineNumber << endl;
+            stream << "D;JGT" << endl;
+
+            stream << "D=0" << endl;
+            stream << "@END" << lineNumber << endl;
+            stream << "0;JMP" << endl;
+
+            stream << "(GT_" << lineNumber << ")" << endl;
+        }
+        else if (command.arg1 == "lt")
+        {
+            stream << "@LT_" << lineNumber << endl;
+            stream << "D;JLT" << endl;
+
+            stream << "D=0" << endl;
+            stream << "@END" << lineNumber << endl;
+            stream << "0;JMP" << endl;
+            stream << "(LT_" << lineNumber << ")" << endl;
+        }
+
+        stream << "D=-1" << endl;
+        stream << "(END" << lineNumber << ")" << endl;
+        stream << "@SP" << endl;
+        stream << "A=M-1" << endl;
+        stream << "A=A-1" << endl;
+        stream << "M=D" << endl;
+    }
+    stream << "@SP" << endl;
+    stream << "M=M-1" << endl;
+}
+
+void writePush(Command command, ofstream &stream, string fileName)
+{
+    if (command.arg1 == "constant")
+    {
+        stream << "@" << command.arg2 << endl;
+        stream << "D=A" << endl;
+    }
+    else if (command.arg1 == "local")
+    {
+        stream << "@LCL" << endl;
+        stream << "D=M" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "A=D+A" << endl;
+        stream << "D=M" << endl;
+    }
+    else if (command.arg1 == "argument")
+    {
+        stream << "@ARG" << endl;
+        stream << "D=M" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "A=D+A" << endl;
+        stream << "D=M" << endl;
+    }
+    else if (command.arg1 == "this")
+    {
+        stream << "@THIS" << endl;
+        stream << "D=M" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "A=D+A" << endl;
+        stream << "D=M" << endl;
+    }
+    else if (command.arg1 == "that")
+    {
+        stream << "@THAT" << endl;
+        stream << "D=M" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "A=D+A" << endl;
+        stream << "D=M" << endl;
+    }
+    else if (command.arg1 == "pointer")
+    {
+        if (command.arg2 == 0)
+        {
+            stream << "@THIS" << endl;
+        }
+        else
+        {
+            stream << "@THAT" << endl;
+        }
+        stream << "D=M" << endl;
+    }
+    else if (command.arg1 == "temp")
+    {
+        stream << "@R5" << endl;
+        stream << "D=A" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "A=D+A" << endl;
+        stream << "D=M" << endl;
+    }
+    else if (command.arg1 == "static")
+    {
+        stream << "@" << fileName << "." << command.arg2 << endl;
+        stream << "D=M" << endl;
+    }
+
+    stream << "@SP" << endl;
+    stream << "A=M" << endl;
+    stream << "M=D" << endl;
+    stream << "@SP" << endl;
+    stream << "M=M+1" << endl;
+}
+
+void writePop(Command command, ofstream &stream, string fileName)
+{
+    if (command.arg1 == "local")
+    {
+        stream << "@LCL" << endl;
+        stream << "D=M" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "D=D+A" << endl;
+    }
+    else if (command.arg1 == "argument")
+    {
+        stream << "@ARG" << endl;
+        stream << "D=M" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "D=D+A" << endl;
+    }
+    else if (command.arg1 == "this")
+    {
+        stream << "@THIS" << endl;
+        stream << "D=M" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "D=D+A" << endl;
+    }
+    else if (command.arg1 == "that")
+    {
+        stream << "@THAT" << endl;
+        stream << "D=M" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "D=D+A" << endl;
+    }
+    else if (command.arg1 == "pointer")
+    {
+        if (command.arg2 == 0)
+        {
+            stream << "@THIS" << endl;
+        }
+        else
+        {
+            stream << "@THAT" << endl;
+        }
+        stream << "D=A" << endl;
+    }
+    else if (command.arg1 == "temp")
+    {
+        stream << "@R5" << endl;
+        stream << "D=A" << endl;
+        stream << "@" << command.arg2 << endl;
+        stream << "D=D+A" << endl;
+    }
+    else if (command.arg1 == "static")
+    {
+        stream << "@" << fileName << "." << command.arg2 << endl;
+        stream << "D=A" << endl;
+    }
+
+    stream << "@R13" << endl;
+    stream << "M=D" << endl;
+    stream << "@SP" << endl;
+    stream << "AM=M-1" << endl;
+    stream << "D=M" << endl;
+    stream << "@R13" << endl;
+    stream << "A=M" << endl;
+    stream << "M=D" << endl;
+}
+
+void codeWriter(Command command, ofstream &stream, string fileName, int lineNumber)
+{
+    if (command.type == push)
+    {
+        writePush(command, stream, fileName);
+    }
+    else if (command.type == pop)
+    {
+        writePop(command, stream, fileName);
+    }
+    else if (command.type == arithmetic)
+    {
+        writeArithmetic(command, stream, to_string(lineNumber));
+    }
+}
