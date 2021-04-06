@@ -3,16 +3,39 @@
 string functionName;
 string processedFilename;
 
+int start_ = 0;
+
 void writeInit(ofstream &stream)
 {
     stream << "@256" << endl;
     stream << "D=A" << endl;
     stream << "@SP" << endl;
     stream << "M=D" << endl;
-    // Command command;
-    // command.arg1 = "Sys.init";
-    // command.arg2 = 0;
-    // writeCall(command, stream);
+
+    stream << "@START" << start_ << endl;
+    stream << "0;JMP" << endl;
+    stream << "(MAKETRUE)" << endl;
+
+    stream << "@SP" << endl;
+    stream << "AM=M-1" << endl;
+
+    stream << "M=-1" << endl;
+
+    stream << "@SP" << endl;
+    stream << "AM=M+1" << endl;
+
+    stream << "@R15" << endl;
+    stream << "A=M" << endl;
+    stream << "0;JMP" << endl;
+
+    stream << "(START" << start_ << ")" << endl;
+
+    Command command;
+    command.arg1 = "Sys.init";
+    command.arg2 = 0;
+    writeCall(command, stream, 0);
+
+    start_++;
 }
 
 void writeArithmetic(Command command, ofstream &stream, string lineNumber)
@@ -240,7 +263,7 @@ void writePop(Command command, ofstream &stream, string fileName)
 
 void writeLabel(Command command, ofstream &stream)
 {
-    stream << "@" << functionName << "$" << command.arg1 << endl;
+    stream << "(" << functionName << "$" << command.arg1 << ")" << endl;
 }
 
 void writeGoto(Command command, ofstream &stream)
@@ -254,6 +277,7 @@ void writeIf(Command command, ofstream &stream)
     stream << "@SP" << endl;
     stream << "AM=M-1" << endl;
     stream << "D=M" << endl;
+
     stream << "@" << functionName << "$" << command.arg1 << endl;
     stream << "D;JNE" << endl;
 }
@@ -299,48 +323,60 @@ void writeCall(Command command, ofstream &stream, int labelsCounter)
     stream << "@SP" << endl;
     stream << "A=M" << endl;
     stream << "M=D" << endl;
+
     stream << "@SP" << endl;
-    stream << "M=M+1" << endl;
+    stream << "AM=M+1" << endl;
+
     stream << "@LCL" << endl;
     stream << "D=M" << endl;
     stream << "@SP" << endl;
     stream << "A=M" << endl;
     stream << "M=D" << endl;
+
     stream << "@SP" << endl;
-    stream << "M=M+1" << endl;
+    stream << "AM=M+1" << endl;
+
     stream << "@ARG" << endl;
     stream << "D=M" << endl;
     stream << "@SP" << endl;
     stream << "A=M" << endl;
     stream << "M=D" << endl;
+
     stream << "@SP" << endl;
-    stream << "M=M+1" << endl;
+    stream << "AM=M+1" << endl;
+
     stream << "@THIS" << endl;
     stream << "D=M" << endl;
     stream << "@SP" << endl;
     stream << "A=M" << endl;
     stream << "M=D" << endl;
+
     stream << "@SP" << endl;
-    stream << "M=M+1" << endl;
+    stream << "AM=M+1" << endl;
+
     stream << "@THAT" << endl;
     stream << "D=M" << endl;
     stream << "@SP" << endl;
     stream << "A=M" << endl;
     stream << "M=D" << endl;
+
     stream << "@SP" << endl;
-    stream << "M=M+1" << endl;
+    stream << "AM=M+1" << endl;
+
     stream << "@" << to_string(command.arg2) << endl;
     stream << "D=A" << endl;
-    stream << "@5" << endl;
-    stream << "D=D+A" << endl;
     stream << "@SP" << endl;
     stream << "D=M-D" << endl;
+    stream << "@5" << endl;
+    stream << "D=D-A" << endl;
     stream << "@ARG" << endl;
     stream << "M=D" << endl;
+
     stream << "@SP" << endl;
     stream << "D=M" << endl;
     stream << "@LCL" << endl;
     stream << "M=D" << endl;
+
     stream << "@" << command.arg1 << endl;
     stream << "0;JMP" << endl;
     stream << "(" << returnLabel << ")" << endl;
@@ -350,56 +386,61 @@ void writeReturn(ofstream &stream)
 {
     stream << "@LCL" << endl;
     stream << "D=M" << endl;
-    stream << "@R13" << endl;
+    stream << "@FRAME" << endl;
     stream << "M=D" << endl;
 
     stream << "@5" << endl;
+    stream << "D=A" << endl;
+    stream << "@FRAME" << endl;
+    stream << "A=M-D" << endl;
     stream << "D=M" << endl;
-    stream << "@R13" << endl;
-    stream << "M=D" << endl;
-
-    stream << "@SP" << endl;
-    stream << "A=D-A" << endl;
-    stream << "D=M" << endl;
-    stream << "@R14" << endl;
+    stream << "@TER" << endl;
     stream << "M=D" << endl;
 
     stream << "@SP" << endl;
     stream << "AM=M-1" << endl;
     stream << "D=M" << endl;
+
     stream << "@ARG" << endl;
     stream << "A=M" << endl;
     stream << "M=D" << endl;
 
-    stream << "A=D" << endl;
+    stream << "@ARG" << endl;
+    stream << "D=M+1" << endl;
     stream << "@SP" << endl;
-    stream << "M=D+1" << endl;
+    stream << "M=D" << endl;
 
-    stream << "@R13" << endl;
-    stream << "AM=M-1" << endl;
+    stream << "@FRAME" << endl;
+    stream << "A=M-1" << endl;
     stream << "D=M" << endl;
     stream << "@THAT" << endl;
     stream << "M=D" << endl;
 
-    stream << "@R13" << endl;
-    stream << "AM=M-1" << endl;
+    stream << "@2" << endl;
+    stream << "D=A" << endl;
+    stream << "@FRAME" << endl;
+    stream << "A=M-D" << endl;
     stream << "D=M" << endl;
     stream << "@THIS" << endl;
     stream << "M=D" << endl;
 
-    stream << "@R13" << endl;
-    stream << "AM=M-1" << endl;
+    stream << "@3" << endl;
+    stream << "D=A" << endl;
+    stream << "@FRAME" << endl;
+    stream << "A=M-D" << endl;
     stream << "D=M" << endl;
     stream << "@ARG" << endl;
     stream << "M=D" << endl;
 
-    stream << "@R13" << endl;
-    stream << "AM=M-1" << endl;
+    stream << "@4" << endl;
+    stream << "D=A" << endl;
+    stream << "@FRAME" << endl;
+    stream << "A=M-D" << endl;
     stream << "D=M" << endl;
     stream << "@LCL" << endl;
     stream << "M=D" << endl;
 
-    stream << "@R14" << endl;
+    stream << "@RET" << endl;
     stream << "A=M" << endl;
     stream << "0; JMP" << endl;
 }

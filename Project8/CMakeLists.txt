@@ -4,7 +4,7 @@ project(programControl VERSION 0.1.0)
 include(CTest)
 enable_testing()
 
-add_executable(programControl 
+add_executable(VMtranslator 
                 main.cpp
                 parser.cpp 
                 codeWriter.cpp)
