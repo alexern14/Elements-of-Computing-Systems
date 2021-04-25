@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include "tokenizer.h"
+
 using namespace std;
 
 class Parser
@@ -14,7 +16,7 @@ public:
      * 
      * @param tokenFile 
      */
-    Parser(string tokenFile);
+    Parser(string tokenFile, Scanner &scanner);
 
     // class className { classVarDec* subroutineDec* }
     void parseClass();
@@ -44,7 +46,6 @@ public:
     //  | whileStatement 
     //  | doStatement 
     //  | returnStatement
-
     void parseStatements();
 
     // let varName ([ expression ])? = expression ;
@@ -82,6 +83,10 @@ public:
     //  | ( expression ) 
     //  | unaryOp term
     void parseTerm();
+
+private:
+
+    Scanner &scanner;
 };
 
 #endif
