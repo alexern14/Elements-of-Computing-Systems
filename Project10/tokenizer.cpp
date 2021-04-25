@@ -90,4 +90,7 @@ Token Scanner::next()
     return token;
 }
 
-string Token::toString() {}
+string Token::toString() 
+{
+    
+}
