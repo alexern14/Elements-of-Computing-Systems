@@ -1,8 +1,8 @@
 #include "include/tokenizer.h"
 
-Scanner::Scanner(string inputFIle) 
+Scanner::Scanner(string inputFile) 
 {
-    ifstream inFile(inputFIle);
+    ifstream inFile(inputFile);
 
     if (!inFile.is_open()) 
     {
@@ -24,6 +24,7 @@ Token Scanner::peek()
     Token token;
     smatch match;
 
+restart:
     string::const_iterator start = wholeFile.begin() + currentIndex;
     string::const_iterator end = wholeFile.end();
 
@@ -38,10 +39,12 @@ Token Scanner::peek()
             if ((regexCount == 0) || (regexCount == 1)) 
             {
                 // advance
-                int nextIndex = match.position() + match.length();
+                int nextIndex = match.position() + match.length() + 1;
                 currentIndex = nextIndex;
 
-                token = peek();
+                // token = peek();
+
+                goto restart;
             } 
             else if (regexCount == 2) 
             {
@@ -54,28 +57,37 @@ Token Scanner::peek()
                     || (compare == "return"))
                 {
                     token.tokenType = KEYWORD;
+                    break;
+                }
+                else 
+                {
+                    continue;
                 }
             } 
             else if (regexCount == 3) 
             {
                 token.tokenType = SYMBOL;
+                break;
             } 
             else if (regexCount == 4) 
             {
                 token.tokenType = INT_CONST;
+                break;
             } 
             else if (regexCount == 5) 
             {
                 token.tokenType = STRING_CONST;
+                break;
             } 
             else if (regexCount == 6) 
             {
                 token.tokenType = IDENTIFIER;
+                break;
             }
-        token.value = match.str();
         }
         regexCount++;
     }
+    token.value = match.str();
     return token;
 }
 
@@ -84,7 +96,7 @@ Token Scanner::next()
     Token token = peek();
 
     // advance
-    int nextIndex = currentIndex + token.value.length();
+    int nextIndex = currentIndex + token.value.length() + 1;
     currentIndex = nextIndex;
 
     return token;
@@ -92,5 +104,5 @@ Token Scanner::next()
 
 string Token::toString() 
 {
-    
+
 }

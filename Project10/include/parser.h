@@ -2,8 +2,12 @@
 #define PARSER_H
 
 #include <iostream>
+#include <map>
+#include <vector>
+#include <fstream>
 
 #include "tokenizer.h"
+#include "codeGenerator.h"
 
 using namespace std;
 
@@ -16,7 +20,54 @@ public:
      * 
      * @param tokenFile 
      */
-    Parser(string tokenFile, Scanner &scanner);
+    Parser(string tokenFile, Scanner &scanner, ofstream &stream);
+
+    map<string, tuple<string, string, int>> subScope = 
+    {
+    };
+
+    map<string, tuple<string, string, int>> staticScope = 
+    {
+    };
+
+    map<string, tuple<string, string, int>> fieldScope = 
+    {
+    };
+
+    map<string, int> counts = 
+    {
+        {"STATIC", 0},
+        {"FIELD", 0},
+        {"ARG", 0},
+        {"VAR", 0}
+    };
+
+    map<string, string> kindMap = 
+    {
+        {"ARG", "ARG"},
+        {"STATIC", "STATIC"},
+        {"VAR", "LOCAL"},
+        {"FIELD", "THIS"}
+    };
+
+    map<string, string> arithmeticMap = 
+    {
+        {"+", "ADD"},
+        {"-", "SUB"},
+        {"=", "EQ"},
+        {">", "GT"},
+        {"<", "LT"},
+        {"&", "AND"},
+        {"|", "OR"}
+    };
+
+    map<string, string> unaryMap = 
+    {
+        {"-", "NEG"},
+        {"~", "NOT"}
+    };
+
+    string className;
 
     // class className { classVarDec* subroutineDec* }
     void parseClass();
@@ -24,17 +75,10 @@ public:
     // Grammar: (static|field) type varName1 (, varName2)* ;
     void parseClassVarDec();
 
-    // int|char|boolean|className1
-    void parseType();
-
-    // (constructor|function|method) (void|type) subroutineName ( parameterList ) subroutineBody
-    void parseSubroutineDec();
+    void parseSubroutine();
 
     // ((type varName) (, type varName)*)?
     void parseParameterList();
-
-    // { varDec* statements }
-    void parseSubroutineBody();
 
     // var type varName (, varName)* ;
     void parseVarDec();
@@ -84,9 +128,16 @@ public:
     //  | unaryOp term
     void parseTerm();
 
+    Token getNextToken();
+
+    void defineSymbolTable(string name, string type, string kind);
+
+    void startSubroutine();
+
 private:
 
     Scanner &scanner;
+    ofstream &stream;
 };
 
 #endif

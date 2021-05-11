@@ -1,18 +1,21 @@
 #include "include/parser.h"
 
-Parser::Parser(string tokenFile, Scanner &scanner)
-    : scanner(scanner)
+Parser::Parser(string tokenFile, Scanner &scanner, ofstream &stream)
+    : scanner(scanner), stream(stream)
 {
-
 }
 
 // class className { classVarDec* subroutineDec* }
 void Parser::parseClass()
 {
-    // <class>
+    Token token;
     //  <keyword> class </keyword>
+    token = getNextToken();
     //  <identifier> classname </identifier>
+    className = getNextToken().value;
     //  <symbol> { </symbol>
+    token = getNextToken();
+
     string next;
     while (((next = scanner.peek().value) == "static") || (next == "field"))
     {
@@ -20,103 +23,118 @@ void Parser::parseClass()
     }
     while (((next = scanner.peek().value) == "constructor") || (next == "method") || (next == "function"))
     {
-        parseSubroutineDec();
+        parseSubroutine();
     }
-    //  <symbol> } </symbol>
-    // </class>
 }
 
 // (static|field) type varName1 (, varName2)* ;
 void Parser::parseClassVarDec()
 {
-    // <classVarDec>
+    Token token;
     // <keyword> static | field </keyword>
-    parseType();
     // <identifier> varName1 </identifier>
+    Token kind = getNextToken();
+    Token type = getNextToken();
+    Token name = getNextToken();
+
+    defineSymbolTable(name.value, type.value, kind.value);
+
     string next;
     while ((next = scanner.peek().value) != ";")
     {
-        // <symbol> , </symbol>
+        token = getNextToken();
         // <identifier> varName </identifier>
+        name = getNextToken();
+
+        defineSymbolTable(name.value, type.value, kind.value);
     }
-    // <symbol> ; </symbol>
-    // </classVarDec>
+    token = getNextToken();
 }
 
-// int|char|boolean|className1
-void Parser::parseType()
+void Parser::parseSubroutine()
 {
-    // <keyword> int | char | boolean </keyword>
-    // | <identifier> className1 </identifier>
-}
+    Token token;
 
-// (constructor|function|method) (void|type) subroutineName ( parameterList ) subroutineBody
-void Parser::parseSubroutineDec()
-{
-    //  <keyword> constructor | function | method </keyword>
-    parseType();
-    //  <identifier> subroutineName </identifier>
-    //  <symbol> ( </symbol>
-    parseParameterList();
-    //  <symbol> ) </symbol>
-    parseSubroutineBody();
-}
+    Token kind = getNextToken();
+    token = getNextToken();
+    Token name = getNextToken();
 
-// ((type varName) (, type varName)*)?
-void Parser::parseParameterList()
-{
-    // <symbol> ( </symbol>
-    // <symbol> ( </symbol>
-    parseType();
-    // <identifier> varName </identifier>
-    // <symbol> ) </symbol>
-    string next;
-    while ((next = scanner.peek().value) != ")")
+    startSubroutine();
+
+    if (kind.value == "method")
     {
-        // <symbol> , </symbol>
-        // <identifier> varName </identifier>
+        defineSymbolTable("instance", className, "ARG");
     }
-    // <symbol> ) </symbol>
-}
 
-// { varDec* statements }
-void Parser::parseSubroutineBody()
-{
-    //  <symbol> { </symbol>
+    token = getNextToken();
+    parseParameterList();
+    token = getNextToken();
+    token = getNextToken();
+
     string next;
     while ((next = scanner.peek().value) == "var")
     {
         parseVarDec();
     }
+
+    string functionName;
+    int numLocals;
+
+    writeFunction(functionName, numLocals, stream);
+
+    if (kind.value == "constructor")
+    {
+        int numFields;
+        writePush("CONST", numFields, stream);
+        writeCall("Memory.alloc", 1, stream);
+        writePop("POINTER", 0, stream);
+    }
+    else if (kind.value == "method")
+    {  
+        writePush("ARG", 0, stream);
+        writePop("POINTER", 0, stream);
+    }
+
     parseStatements();
-    //  <symbol> } </symbol>
+    token = getNextToken();
+}
+
+// ((type varName) (, type varName)*)?
+void Parser::parseParameterList()
+{
+    Token token;
+    
+    string next;
+    while ((next = scanner.peek().value) != ")")
+    {
+
+    }
 }
 
 // var type varName (, varName)* ;
 void Parser::parseVarDec()
 {
-    // <keyword> var </keyword>
-    parseType();
-    // <identifier> varName </identifier>
+    Token token;
+
+    token = getNextToken();
+    Token type = getNextToken();
+    Token name = getNextToken();
+
+    defineSymbolTable(name.value, type.value, "VAR");
+
     string next;
     while ((next = scanner.peek().value) != ";")
     {
-        // <symbol> , </symbol>
-        // <identifier> varName </identifier>
+        token = getNextToken();
+        name = getNextToken();
+        
+        defineSymbolTable(name.value, type.value, "VAR");
     }
-    // <symbol> ; </symbol>
+    token = getNextToken();
 }
 
-// statement*
-// statement: 
-//  letStatement
-//  | ifStatement 
-//  | whileStatement 
-//  | doStatement 
-//  | returnStatement
 void Parser::parseStatements()
 {
-    // <statements>
     // loop over statements and call corresponding parsing function
     string next;
     while ((next = scanner.peek().value) != ";")
@@ -142,78 +160,132 @@ void Parser::parseStatements()
             parseReturnStatement();
         }
     }
-    // </statements>
 }
 
 // let varName ([ expression ])? = expression ;
 void Parser::parseLetStatement()
 {
-    // <letStatement>
-    //  <keyword> let </keyword>
-    //  <identifier> varName </identifer>
-    //  <symbol> ( </symbol>
-    //  <symbol> [ </symbol>
-    parseExpression();
-    //  <symbol> } </symbol>
-    //  <symbol> ] </symbol>
-    //  <symbol> = </symbol>
-    parseExpression();
-    //  <symbol> ; </symbol>
-    // </letStatement>
+    Token token;
+
+    Token varName = getNextToken();
+    // var kind
+    // var index
+    
+    string next;
+    next = scanner.peek().value;
+    if (next == "[")
+    {
+        token = getNextToken();
+        parseExpression();
+        token = getNextToken();
+
+        writePush();
+        writeArithmetic("ADD", stream);
+        writePop("TEMP", 0, stream);
+
+        token = getNextToken();
+        parseExpression();
+        token = getNextToken();
+
+        writePush("TEMP", 0, stream);
+        writePop("POINTER", 1, stream);
+        writePop("THAT", 0, stream);
+    }
+    else
+    {
+        token = getNextToken();
+        parseExpression();
+        token = getNextToken();
+
+        writePop();
+    }
 }
 
 // if ( expression ) { statements } ( else { statements } )?
 void Parser::parseIfStatement()
 {
-    // <ifStatement>
-    //  <keyword> if </keyword>
-    //  <symbol> ( </symbol>
+    Token token;
+
+    // if index
+
+    token = getNextToken();
     parseExpression();
-    //  <symbol> ) </symbol>
-    //  <symbol> { </symbol>
+    token = getNextToken();
+    token = getNextToken();
+
+    writeIf();
+    writeGoto();
+    writeLabel();
     parseStatements();
-    //  <symbol> } </symbol>
-    //  <symbol> ( </symbol>
-    //  <keyword> else </keyword>
-    //  <symbol> { </symbol>
-    parseStatements();
-    //  <symbol> } </symbol>
-    //  <symbol> ) </symbol>
-    // </ifStatement>
+    writeGoto();
+    token = getNextToken();
+
+    writeLabel();
+
+    string next;
+    next = scanner.peek().value;
+    if (next == "else")
+    {
+        token = getNextToken();
+        token = getNextToken();
+        parseStatements();
+        token = getNextToken();
+    }
+    
+    writeLabel();
 }
 
 // while ( expression ) { statements }
 void Parser::parseWhileStatement()
 {
-    // <whileStatement>
-    //  <keyword> while </keyword>
-    //  <symbol> ( </symbol>
+    Token token;
+
+    // while index
+    writeLabel();
+
+    token = getNextToken();
     parseExpression();
-    //  <symbol> ) </symbol>
-    //  <symbol> { </symbol>
+
+    writeArithmetic();
+
+    token = getNextToken();
+    token = getNextToken();
+
+    writeIf();
     parseStatements();
-    //  <symbol> } </symbol>
-    // </whileStatement>
+    writeGoto();
+    writeLabel();
+
+    token = getNextToken();
 }
 
 // return expression? ;
 void Parser::parseReturnStatement()
 {
-    // <returnStatement>
-    //  <keyword> return </keyword>
-    parseExpression();
-    //  <symbol> ; </symbol>
-    // </returnStatement>
+    Token token;
+
+    string next;
+    next = scanner.peek().value;
+    if (next == ";")
+    {
+        parseExpression();
+    }
+    else
+    {
+        writePush("CONST", 0, stream);
+    }
+    writeReturn();
+    token = getNextToken();
 }
 
 // do subroutineCall ;
 void Parser::parseDoStatement()
 {
-    // <doStatement>
-    //  <keyword> do </keyword>
     parseSubroutineCall();
-    //  <symbol> ; </symbol>
-    // </doStatement>
+
+    writePop();
+
+    Token token = getNextToken();
 }
 
 // subroutineName ( expressionList ) 
@@ -227,26 +299,46 @@ void Parser::parseSubroutineCall()
 // (expression (, expression)*)?
 void Parser::parseExpressionList()
 {
-    // <symbol> ( </symbol>
-    parseExpression();
+    int numargs = 0;
+
     string next;
-    while ((next = scanner.peek().value) != ")")
+    next = scanner.peek().value;
+    if (next == ";")
     {
-        // <symbol> , </symbol>
+        numargs++;
         parseExpression();
     }
-    // <symbol> ) </symbol>
+    
+    while ((next = scanner.peek().value) != ")")
+    {
+        numargs++;
+        Token token = getNextToken();
+        parseExpression();
+    }
 }
 
 // term (op term)*
 void Parser::parseExpression()
 {
     parseTerm();
-    // TODO
+    
     // while ((next = scanner.peek().value) == binary op)
     // {
-        // binary op
-        // parseTerm();
+        Token op = getNextToken();
+        parseTerm();
+
+        // if ()
+        // {
+            writeArithmetic();
+        // }
+        // else if ()
+        // {
+            writeCall();
+        // }
+        // else if ()
+        // {
+            writeCall();
+        // }
     // }
 }
 
@@ -264,3 +356,50 @@ void Parser::parseTerm()
     // TODO
 }
 
+Token Parser::getNextToken()
+{
+    Token token = scanner.next();
+
+    return token;
+}
+
+void Parser::defineSymbolTable(string name, string type, string kind)
+{
+    int num;
+
+    if (kind == "ARG")
+    {
+        num = counts["ARG"];
+        counts["ARG"] = counts["ARG"] + 1;
+
+        subScope[name] = make_tuple(type, kind, num);
+    }
+    else if (kind == "VAR")
+    {
+        num = counts["VAR"];
+        counts["VAR"] = counts["VAR"] + 1;
+
+        subScope[name] =make_tuple(type, kind, num);
+    }
+    else if (kind == "STATIC")
+    {
+        num = counts["STATIC"];
+        counts["STATIC"] = counts["STATIC"] + 1;
+
+        staticScope[name] = make_tuple(type, kind, num);
+    }
+    else if (kind == "FIELD")
+    {
+        num = counts["FIELD"];
+        counts["FIELD"] = counts["FIELD"] + 1;
+
+        fieldScope[name] = make_tuple(type, kind, num);
+    }
+}
+
+void Parser::startSubroutine()
+{
+    subScope = {};
+    counts["ARG"] = 0;
+    counts["VAR"] = 0;
+}
