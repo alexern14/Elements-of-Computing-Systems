@@ -22,6 +22,9 @@ public:
      */
     Parser(string tokenFile, Scanner &scanner, ofstream &stream);
 
+    int whileCount = 0;
+    int ifCount = 0;
+
     map<string, tuple<string, string, int>> subScope = 
     {
     };
@@ -112,7 +115,7 @@ public:
     void parseSubroutineCall();
 
     // (expression (, expression)*)?
-    void parseExpressionList();
+    int parseExpressionList();
 
     // term (op term)*
     void parseExpression();
@@ -128,11 +131,23 @@ public:
     //  | unaryOp term
     void parseTerm();
 
+    void parseKeyword();
+
+    void parseString();
+
     Token getNextToken();
 
     void defineSymbolTable(string name, string type, string kind);
 
     void startSubroutine();
+
+    int varCount(string kind);
+
+    string kind(string name);
+
+    string type(string name);
+
+    int index(string name);
 
 private:
 

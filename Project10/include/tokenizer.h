@@ -63,17 +63,17 @@ public:
      * @brief regexs
      *
      */
-    const regex keyword{"[a-z]*"};
+    const regex keyword{"[a-z]+"};
     // const regex keyword{
     //     "(class|constructor|function|method|field|static|var|int|char|boolean|"
     //     "void|true|false|null|this|let|do|if|else|while|return)"};
-    const regex symbol{"([{}()[].,;+-*/&|<>=~])"};
-    const regex int_const{"(\d+)"};
+    const regex symbol{"[\\{\\}\\(\\)\\[\\]\\.\\,\\;\\+\\-\\*\\/\\&\\|\\<\\>\\=\\~]"};
+    const regex int_const{"[0-9]+"};
     const regex string_const{"\"([^\n]*)\""};
-    const regex identifier{"([A-Za-z_]\w*)"};
+    const regex identifier{"[A-Za-z_]+[A-Za-z0-9_]*"};
 
     const regex inline_comment{"//.*\n"};
-    const regex multiline_comment{"/\*.*?\*/"};
+    const regex multiline_comment{"\\/\\*(.*?)\\*\\/"};
 
     vector<regex> regexes{multiline_comment, inline_comment, keyword,   symbol,
                             int_const,         string_const,   identifier};

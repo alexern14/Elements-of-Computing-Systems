@@ -22,17 +22,19 @@ Scanner::Scanner(string inputFile)
 Token Scanner::peek() 
 {
     Token token;
-    smatch match;
+    // smatch match;
 
 restart:
-    string::const_iterator start = wholeFile.begin() + currentIndex;
-    string::const_iterator end = wholeFile.end();
+    
+    string::iterator start = wholeFile.begin();
+    advance(start, currentIndex);
+    string matchString = wholeFile.substr(size_t(currentIndex));
 
     int regexCount = 0;
     for (regex r : regexes) 
     {
-        // regex_search(wholeFile, match, r);
-        regex_search(start, end, match, r);
+        smatch match;
+        regex_search(matchString, match, r, regex_constants::match_continuous);
 
         if (!match.empty()) 
         {
@@ -41,8 +43,6 @@ restart:
                 // advance
                 int nextIndex = match.position() + match.length() + 1;
                 currentIndex = nextIndex;
-
-                // token = peek();
 
                 goto restart;
             } 
@@ -57,37 +57,42 @@ restart:
                     || (compare == "return"))
                 {
                     token.tokenType = KEYWORD;
+                    token.value = match.str();
                     break;
                 }
                 else 
                 {
+                    regexCount++;
                     continue;
                 }
             } 
             else if (regexCount == 3) 
             {
                 token.tokenType = SYMBOL;
+                token.value = match.str();
                 break;
             } 
             else if (regexCount == 4) 
             {
                 token.tokenType = INT_CONST;
+                token.value = match.str();
                 break;
             } 
             else if (regexCount == 5) 
             {
                 token.tokenType = STRING_CONST;
+                token.value = match.str();
                 break;
             } 
             else if (regexCount == 6) 
             {
                 token.tokenType = IDENTIFIER;
+                token.value = match.str();
                 break;
             }
         }
         regexCount++;
     }
-    token.value = match.str();
     return token;
 }
 
