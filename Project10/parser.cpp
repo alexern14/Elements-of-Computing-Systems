@@ -77,7 +77,7 @@ void Parser::parseSubroutine()
         parseVarDec();
     }
 
-    string functionName = className + "." + className;
+    string functionName = className + "." + name.value;
     int numLocals = varCount("VAR");
 
     writeFunction(functionName, numLocals, stream);
@@ -151,7 +151,7 @@ void Parser::parseStatements()
 {
     // loop over statements and call corresponding parsing function
     string next;
-    while ((next = scanner.peek().value) != ";")
+    while (isStatement(next = scanner.next().value))
     {
         if (next == "let")
         {
@@ -288,7 +288,7 @@ void Parser::parseReturnStatement()
 
     string next;
     next = scanner.peek().value;
-    if (next == ";")
+    if (next != ";")
     {
         parseExpression();
     }
@@ -365,7 +365,7 @@ int Parser::parseExpressionList()
 
     string next;
     next = scanner.peek().value;
-    if (next == ";")
+    if (next != "(")
     {
         numArgs++;
         parseExpression();
@@ -412,6 +412,7 @@ void Parser::parseTerm()
     Token token;
 
     string next;
+    tokentype type;
 
     if (unaryMap.find(scanner.peek().value) != unaryMap.end())
     {
@@ -425,16 +426,16 @@ void Parser::parseTerm()
         parseExpression();
         token = getNextToken(); 
     }
-    else if ((next = scanner.peek().tokenType) == "INT_CONST")
+    else if ((type = scanner.peek().tokenType) == INT_CONST)
     {
         token = getNextToken();
         writePush("CONST", stoi(token.value), stream);
     }
-    else if ((next = scanner.peek().tokenType) == "STRING_CONST")
+    else if ((type = scanner.peek().tokenType) == STRING_CONST)
     {
         parseString();
     }
-    else if ((next = scanner.peek().tokenType) == "KEYWORD")
+    else if ((type = scanner.peek().tokenType) == KEYWORD)
     {
         parseKeyword();
     }
@@ -622,4 +623,29 @@ int Parser::index(string name)
     {
         return 0;
     }
+}
+
+bool Parser::isStatement(string value)
+{
+    if (value == "let")
+    {
+        return true;
+    }
+    else if (value == "if")
+    {
+        return true;
+    }
+    else if (value == "while")
+    {
+        return true;
+    }
+    else if (value == "do")
+    {
+        return true;
+    }
+    else if (value == "return")
+    {
+        return true;
+    }
+    return false;
 }

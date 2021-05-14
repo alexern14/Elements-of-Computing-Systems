@@ -72,7 +72,7 @@ public:
     const regex string_const{"\"([^\n]*)\""};
     const regex identifier{"[A-Za-z_]+[A-Za-z0-9_]*"};
 
-    const regex inline_comment{"//.*\n"};
+    const regex inline_comment{"\\/\\/.*\n"};
     const regex multiline_comment{"\\/\\*(.*?)\\*\\/"};
 
     vector<regex> regexes{multiline_comment, inline_comment, keyword,   symbol,

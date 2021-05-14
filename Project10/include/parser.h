@@ -149,6 +149,8 @@ public:
 
     int index(string name);
 
+    bool isStatement(string value);
+
 private:
 
     Scanner &scanner;

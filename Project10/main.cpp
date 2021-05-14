@@ -9,9 +9,10 @@ using namespace std;
 
 int main(int argc, char** argv) 
 {
-    string inputFile = "../inputs/average.jack";
+    // string inputFile = "../inputs/Main.jack";
+    string inputFile = argv[0];
 
-    string outFile = "";
+    string outFile = "../inputs/Main.txt";
 
     ofstream out(outFile);
 

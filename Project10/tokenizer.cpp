@@ -12,9 +12,17 @@ Scanner::Scanner(string inputFile)
     string line;
     while (getline(inFile, line)) 
     {
+        if (line == "\r")
+        {
+            continue;
+        }
+
         wholeFile += line;
+        wholeFile = std::regex_replace(wholeFile, std::regex("^ +| +$|( ) +"), "$1");
         wholeFile += " ";
     }
+
+    wholeFile.erase( std::remove(wholeFile.begin(), wholeFile.end(), '\r'), wholeFile.end() );
 
     currentIndex = 0;
 }
@@ -28,7 +36,15 @@ restart:
     
     string::iterator start = wholeFile.begin();
     advance(start, currentIndex);
-    string matchString = wholeFile.substr(size_t(currentIndex));
+    string matchString;
+    if (currentIndex < wholeFile.length())
+    {
+        matchString = wholeFile.substr(size_t(currentIndex));
+    }
+    else 
+    {
+        return token;
+    }
 
     int regexCount = 0;
     for (regex r : regexes) 
@@ -101,7 +117,18 @@ Token Scanner::next()
     Token token = peek();
 
     // advance
-    int nextIndex = currentIndex + token.value.length() + 1;
+    int nextIndex;
+    if ((wholeFile.length() - 1) > (currentIndex + token.value.length()))
+    {
+        if (wholeFile.at(currentIndex + token.value.length()) == ' ')
+        {
+            nextIndex = currentIndex + token.value.length() + 1;
+        }
+        else
+        {
+            nextIndex = currentIndex + token.value.length();
+        }
+    }
     currentIndex = nextIndex;
 
     return token;
